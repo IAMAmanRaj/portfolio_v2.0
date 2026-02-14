@@ -1,2 +1,13 @@
-# portfolio_v2.0
-TanStack ecosystem (Start, Router, Query) • TypeScript • Prisma • Supabase • TailwindCSS
+# Portfolio v2.0
+
+**Frontend:**
+- React + TypeScript
+- TailwindCSS
+- TanStack Query
+- Vite
+
+**Backend:**
+- Node.js + Express
+- TypeScript
+- Prisma (ORM)
+- Supabase PostgreSQL
