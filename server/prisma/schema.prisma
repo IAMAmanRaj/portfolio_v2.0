@@ -19,10 +19,11 @@
     email        String   @unique
     passwordHash String   @map("password_hash")
     displayName  String   @map("display_name")
+    bio          String?  @db.Text             
+  avatarUrl    String?  @map("avatar_url") 
     role         UserRole @default(AUTHOR)
     createdAt    DateTime @default(now()) @map("created_at")
     updatedAt    DateTime @updatedAt @map("updated_at")
-
     posts Post[]
     @@map("users")
   }
