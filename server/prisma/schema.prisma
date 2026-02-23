@@ -1,115 +1,115 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+  // This is your Prisma schema file,
+  // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+  // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+  // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-}
+  generator client {
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
+  }
+      
+  datasource db {
+    provider = "postgresql"
+  }
 
-datasource db {
-  provider = "postgresql"
-}
+  // USERS (Simplified)
+  model User {
+    id           String   @id @default(uuid())
+    email        String   @unique
+    passwordHash String   @map("password_hash")
+    displayName  String   @map("display_name")
+    role         UserRole @default(AUTHOR)
+    createdAt    DateTime @default(now()) @map("created_at")
+    updatedAt    DateTime @updatedAt @map("updated_at")
 
-// USERS (Simplified)
-model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  displayName  String   @map("display_name")
-  role         UserRole @default(AUTHOR)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+    posts Post[]
+    @@map("users")
+  }
 
-  posts Post[]
-  @@map("users")
-}
+  enum UserRole {
+    ADMIN
+    AUTHOR
+  }
 
-enum UserRole {
-  ADMIN
-  AUTHOR
-}
+  // POSTS (Core)
+  model Post {
+    id              String     @id @default(uuid())
+    authorId        String     @map("author_id")
+    title           String
+    slug            String     @unique
+    content         String     @db.Text
+    excerpt         String?    @db.Text
+    featuredImage   String?    @map("featured_image") // ImageKit URL
+    status          PostStatus @default(DRAFT)
+    isPinned        Boolean    @default(false) @map("is_pinned")
+    publishedAt     DateTime?  @map("published_at")
+    createdAt       DateTime   @default(now()) @map("created_at")
+    updatedAt       DateTime   @updatedAt @map("updated_at")
 
-// POSTS (Core)
-model Post {
-  id              String     @id @default(uuid())
-  authorId        String     @map("author_id")
-  title           String
-  slug            String     @unique
-  content         String     @db.Text
-  excerpt         String?    @db.Text
-  featuredImage   String?    @map("featured_image") // ImageKit URL
-  status          PostStatus @default(DRAFT)
-  isPinned        Boolean    @default(false) @map("is_pinned")
-  publishedAt     DateTime?  @map("published_at")
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
+    author         User           @relation(fields: [authorId], references: [id])
+    postCategories PostCategory[]
+    postTags       PostTag[]
 
-  author         User           @relation(fields: [authorId], references: [id])
-  postCategories PostCategory[]
-  postTags       PostTag[]
+    @@index([authorId])
+    @@index([status])
+    @@index([publishedAt(sort: Desc)])
+    @@map("posts")
+  }
 
-  @@index([authorId])
-  @@index([status])
-  @@index([publishedAt(sort: Desc)])
-  @@map("posts")
-}
+  enum PostStatus {
+    DRAFT
+    PUBLISHED
+  }
 
-enum PostStatus {
-  DRAFT
-  PUBLISHED
-}
+  // CATEGORIES (Flat for MVP)
+  model Category {
+    id          String   @id @default(uuid())
+    name        String   @unique
+    slug        String   @unique
+    description String?  @db.Text
+    createdAt   DateTime @default(now()) @map("created_at")
 
-// CATEGORIES (Flat for MVP)
-model Category {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?  @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
+      postCategories PostCategory[]
+    @@map("categories")
+  }
 
-  postCategories PostCategory[]
-  @@map("categories")
-}
+  // TAGS
+  model Tag {
+    id        String   @id @default(uuid())
+    name      String   @unique
+    slug      String   @unique
+    createdAt DateTime @default(now()) @map("created_at")
 
-// TAGS
-model Tag {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  slug      String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
+    postTags PostTag[]
+    @@map("tags")
+  }
 
-  postTags PostTag[]
-  @@map("tags")
-}
+  // JUNCTIONS 
+  model PostCategory {
+    id         String @id @default(uuid())
+    postId     String @map("post_id")
+    categoryId String @map("category_id")
 
-// JUNCTIONS (Keep as-is)
-model PostCategory {
-  id         String @id @default(uuid())
-  postId     String @map("post_id")
-  categoryId String @map("category_id")
+    post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+    category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+    @@unique([postId, categoryId])
+    @@index([postId])
+    @@index([categoryId]) 
+    @@map("post_categories")
+  }
 
-  @@unique([postId, categoryId])
-  @@index([postId])
-  @@index([categoryId])
-  @@map("post_categories")
-}
+  model PostTag {
+    id     String @id @default(uuid())
+    postId String @map("post_id")
+    tagId  String @map("tag_id")
 
-model PostTag {
-  id     String @id @default(uuid())
-  postId String @map("post_id")
-  tagId  String @map("tag_id")
+    post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+    tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([postId, tagId])
-  @@index([postId])
-  @@index([tagId])
-  @@map("post_tags")
-}
+    @@unique([postId, tagId])
+    @@index([postId])
+    @@index([tagId])
+    @@map("post_tags")
+  }
