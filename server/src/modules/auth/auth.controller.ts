@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
 import { clearAuthCookie, setAuthCookie } from "../../utils/cookies";
+import { clearCsrfCookie, createCsrfToken, setCsrfCookie } from "../../utils/csrf";
 import { AuthService } from "./auth.service";
 import { loginSchema } from "./auth.validators";
 
@@ -16,6 +17,7 @@ export class AuthController {
 		try {
 			const { user, token } = await authService.login(parseResult.data);
 			setAuthCookie(res, token);
+			setCsrfCookie(res, createCsrfToken());
 			return res.status(200).json({ user });
 		} catch {
 			return res.status(401).json({ message: "Invalid credentials" });
@@ -24,6 +26,7 @@ export class AuthController {
 
 	async logout(_req: Request, res: Response) {
 		clearAuthCookie(res);
+		clearCsrfCookie(res);
 		return res.status(200).json({ message: "Logged out" });
 	}
 

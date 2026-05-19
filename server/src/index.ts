@@ -5,6 +5,7 @@ import { setupSwagger } from "./swagger";
 import { env } from "./config/env";
 import { corsMiddleware } from "./config/cors";
 import { cookieMiddleware } from "./middlewares/auth.middleware";
+import { csrfMiddleware } from "./middlewares/csrf.middleware";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { userRoutes } from "./modules/users/user.routes";
@@ -25,6 +26,7 @@ async function startServer() {
 	app.use(express.json());
 	app.use(cookieMiddleware);
 	app.use(corsMiddleware);
+	app.use(csrfMiddleware);
 
 	// Swagger UI
 	setupSwagger(app);
