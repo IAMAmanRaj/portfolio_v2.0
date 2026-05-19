@@ -51,6 +51,45 @@ async function main() {
 	});
 
 	console.log("Seeded admin user:", { id: user.id, email: user.email, role: user.role });
+
+	// const authorPassword =
+	// 	(process.env.SEED_AUTHOR_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD)?.trim() ?? "";
+	// if (authorPassword.length < 6) {
+	// 	throw new Error(
+	// 		"SEED_AUTHOR_PASSWORD (or SEED_ADMIN_PASSWORD) must be at least 6 characters to seed authors",
+	// 	);
+	// }
+
+	// const authorPasswordHash = await hashPassword(authorPassword);
+
+	// const authors = [
+	// 	{ email: "imamanraj87@gmail.com", displayName: "author_1" },
+	// 	{ email: "amanrajxlr8@gmail.com", displayName: "author_2" },
+	// ] as const;
+
+	// for (const { email, displayName } of authors) {
+	// 	const normalizedEmail = email.trim().toLowerCase();
+	// 	const seeded = await prisma.user.upsert({
+	// 		where: { email: normalizedEmail },
+	// 		update: {
+	// 			passwordHash: authorPasswordHash,
+	// 			displayName,
+	// 			role: UserRole.AUTHOR,
+	// 		},
+	// 		create: {
+	// 			email: normalizedEmail,
+	// 			passwordHash: authorPasswordHash,
+	// 			displayName,
+	// 			role: UserRole.AUTHOR,
+	// 		},
+	// 	});
+	// 	console.log("Seeded author:", {
+	// 		id: seeded.id,
+	// 		email: seeded.email,
+	// 		displayName: seeded.displayName,
+	// 		role: seeded.role,
+	// 	});
+	// }
 }
 
 main()

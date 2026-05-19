@@ -8,7 +8,7 @@ export const requireRole = (...roles: Array<"ADMIN" | "AUTHOR">) => {
 		}
 
 		if (!roles.includes(req.user.role)) {
-			return res.status(403).json({ message: "Forbidden" });
+			return res.status(403).json({ message: "Forbidden. You are not authorized to access this resource." });
 		}
 
 		return next();
