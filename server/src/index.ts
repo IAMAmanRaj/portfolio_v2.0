@@ -9,6 +9,9 @@ import { csrfMiddleware } from "./middlewares/csrf.middleware";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { userRoutes } from "./modules/users/user.routes";
+import { Router } from "express";
+
+
 
 async function startServer() {
 	try {
@@ -31,16 +34,18 @@ async function startServer() {
 	// Swagger UI
 	setupSwagger(app);
 
-	// Routes
-	app.use("/auth", authRoutes);
-	app.use("/users", userRoutes);
+	
 
-	// Health check
-	app.get("/", (_req, res) => {
+	// Routes
+	const v1 = Router();
+	v1.use("/auth", authRoutes);
+	v1.use("/users", userRoutes);
+	v1.get("/health", (_req, res) => {
 		res.json({ message: "Backend is up & running!" });
 	});
+	app.use("/api/v1", v1);
 
-	// Error handler (should be last)
+	
 	app.use(errorMiddleware);
 
 	app.listen(env.port, () => {
