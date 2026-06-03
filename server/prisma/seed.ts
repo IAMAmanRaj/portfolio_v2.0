@@ -6,65 +6,105 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { hashPassword } from "../src/utils/password";
 
 const adapter = new PrismaPg({
-	connectionString: process.env.DATABASE_URL!,
+	connectionString: requireEnv("DATABASE_URL"),
 });
 
 const prisma = new PrismaClient({
 	adapter,
 });
 
-const requireEnv = (key: string): string => {
+function requireEnv(key: string): string {
 	const value = process.env[key];
-	if (!value) {
+if (!value) {
 		throw new Error(`Missing environment variable: ${key}`);
 	}
 	return value;
-};
+}
 
 async function main() {
-	const email = requireEnv("SEED_SUPER_ADMIN_EMAIL").trim().toLowerCase();
-	const password = requireEnv("SEED_SUPER_ADMIN_PASSWORD");
-	const displayName =
+	// ── SUPER ADMIN ──────────────────────────────────────────────
+	const superAdminEmail = requireEnv("SEED_SUPER_ADMIN_EMAIL").trim().toLowerCase();
+	const superAdminPassword = requireEnv("SEED_SUPER_ADMIN_PASSWORD");
+	const superAdminDisplayName =
 		(process.env.SEED_SUPER_ADMIN_DISPLAY_NAME ?? "").trim() ||
-		email.split("@")[0] ||
+		superAdminEmail.split("@")[0] ||
 		"Super Admin";
 
-	if (password.length < 6) {
+	if (superAdminPassword.length < 6) {
 		throw new Error("SEED_SUPER_ADMIN_PASSWORD must be at least 6 characters");
 	}
 
-	const passwordHash = await hashPassword(password);
+	const superAdminPasswordHash = await hashPassword(superAdminPassword);
 
-	const user = await prisma.user.upsert({
-		where: { email },
+	const superAdmin = await prisma.user.upsert({
+		where: { email: superAdminEmail },
 		update: {
-			passwordHash,
-			displayName,
+			passwordHash: superAdminPasswordHash,
+			displayName: superAdminDisplayName,
 			role: UserRole.SUPER_ADMIN,
 		},
 		create: {
-			email,
-			passwordHash,
-			displayName,
+			email: superAdminEmail,
+			passwordHash: superAdminPasswordHash,
+			displayName: superAdminDisplayName,
 			role: UserRole.SUPER_ADMIN,
 		},
 	});
 
-	console.log("Seeded super admin user:", { id: user.id, email: user.email, role: user.role });
+	console.log("Seeded super admin:", {
+		id: superAdmin.id,
+		email: superAdmin.email,
+		role: superAdmin.role,
+	});
 
-	// const authorPassword =
-	// 	(process.env.SEED_AUTHOR_PASSWORD ?? process.env.SEED_SUPER_ADMIN_PASSWORD)?.trim() ?? "";
+	// ── ADMINS ───────────────────────────────────────────────────
+	// const adminPassword = requireEnv("SEED_ADMIN_PASSWORD");
+	// if (adminPassword.length < 6) {
+	// 	throw new Error("SEED_ADMIN_PASSWORD must be at least 6 characters");
+	// }
+
+	// const adminPasswordHash = await hashPassword(adminPassword);
+
+	// const admins = [
+	// 	{ email: "admin1@example.com", displayName: "Admin One" },
+	// 	{ email: "admin2@example.com", displayName: "Admin Two" },
+	// ] as const;
+
+	// for (const { email, displayName } of admins) {
+	// 	const normalizedEmail = email.trim().toLowerCase();
+	// 	const seeded = await prisma.user.upsert({
+	// 		where: { email: normalizedEmail },
+	// 		update: {
+	// 			passwordHash: adminPasswordHash,
+	// 			displayName,
+	// 			role: UserRole.ADMIN,
+	// 		},
+	// 		create: {
+	// 			email: normalizedEmail,
+	// 			passwordHash: adminPasswordHash,
+	// 			displayName,
+	// 			role: UserRole.ADMIN,
+	// 		},
+	// 	});
+	// 	console.log("Seeded admin:", {
+	// 		id: seeded.id,
+	// 		email: seeded.email,
+	// 		displayName: seeded.displayName,
+	// 		role: seeded.role,
+	// 	});
+	// }
+
+	// ── AUTHORS ──────────────────────────────────────────────────
+	// const authorPassword = requireEnv("SEED_AUTHOR_PASSWORD");
 	// if (authorPassword.length < 6) {
-	// 	throw new Error(
-	// 		"SEED_AUTHOR_PASSWORD (or SEED_SUPER_ADMIN_PASSWORD) must be at least 6 characters to seed authors",
-	// 	);
+	// 	throw new Error("SEED_AUTHOR_PASSWORD must be at least 6 characters");
 	// }
 
 	// const authorPasswordHash = await hashPassword(authorPassword);
 
 	// const authors = [
-	// 	{ email: "imamanraj87@gmail.com", displayName: "author_1" },
-	// 	{ email: "amanrajxlr8@gmail.com", displayName: "author_2" },
+	// 	{ email: "author1@example.com", displayName: "Author One" },
+	// 	{ email: "author2@example.com", displayName: "Author Two" },
 	// ] as const;
 
 	// for (const { email, displayName } of authors) {
