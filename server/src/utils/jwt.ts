@@ -4,7 +4,7 @@ import { env } from "../config/env";
 export interface JwtPayload {
 	sub: string;
 	email: string;
-	role: "ADMIN" | "AUTHOR";
+	role: "SUPER_ADMIN" | "ADMIN" | "AUTHOR";
 }
 
 export const signJwt = (payload: JwtPayload): string => {
@@ -16,4 +16,3 @@ export const signJwt = (payload: JwtPayload): string => {
 export const verifyJwt = (token: string): JwtPayload => {
 	return jwt.verify(token, env.jwtSecret) as JwtPayload;
 };
-

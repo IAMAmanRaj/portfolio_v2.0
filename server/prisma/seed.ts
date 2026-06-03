@@ -22,15 +22,15 @@ const requireEnv = (key: string): string => {
 };
 
 async function main() {
-	const email = requireEnv("SEED_ADMIN_EMAIL").trim().toLowerCase();
-	const password = requireEnv("SEED_ADMIN_PASSWORD");
+	const email = requireEnv("SEED_SUPER_ADMIN_EMAIL").trim().toLowerCase();
+	const password = requireEnv("SEED_SUPER_ADMIN_PASSWORD");
 	const displayName =
-		(process.env.SEED_ADMIN_DISPLAY_NAME ?? "").trim() ||
+		(process.env.SEED_SUPER_ADMIN_DISPLAY_NAME ?? "").trim() ||
 		email.split("@")[0] ||
-		"Admin";
+		"Super Admin";
 
 	if (password.length < 6) {
-		throw new Error("SEED_ADMIN_PASSWORD must be at least 6 characters");
+		throw new Error("SEED_SUPER_ADMIN_PASSWORD must be at least 6 characters");
 	}
 
 	const passwordHash = await hashPassword(password);
@@ -40,23 +40,23 @@ async function main() {
 		update: {
 			passwordHash,
 			displayName,
-			role: UserRole.ADMIN,
+			role: UserRole.SUPER_ADMIN,
 		},
 		create: {
 			email,
 			passwordHash,
 			displayName,
-			role: UserRole.ADMIN,
+			role: UserRole.SUPER_ADMIN,
 		},
 	});
 
-	console.log("Seeded admin user:", { id: user.id, email: user.email, role: user.role });
+	console.log("Seeded super admin user:", { id: user.id, email: user.email, role: user.role });
 
 	// const authorPassword =
-	// 	(process.env.SEED_AUTHOR_PASSWORD ?? process.env.SEED_ADMIN_PASSWORD)?.trim() ?? "";
+	// 	(process.env.SEED_AUTHOR_PASSWORD ?? process.env.SEED_SUPER_ADMIN_PASSWORD)?.trim() ?? "";
 	// if (authorPassword.length < 6) {
 	// 	throw new Error(
-	// 		"SEED_AUTHOR_PASSWORD (or SEED_ADMIN_PASSWORD) must be at least 6 characters to seed authors",
+	// 		"SEED_AUTHOR_PASSWORD (or SEED_SUPER_ADMIN_PASSWORD) must be at least 6 characters to seed authors",
 	// 	);
 	// }
 

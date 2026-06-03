@@ -38,10 +38,18 @@ export class UserService {
 	}
 
 	async updateAuthor(id: string, input: UpdateUserInput, actorId: string) {
+		const target = await userRepository.findById(id);
+		if (!target) {
+			throw new HttpError(404, "User not found");
+		}
+
+		if (target.role === UserRole.SUPER_ADMIN && target.id !== actorId) {
+			throw new HttpError(403, "Cannot update the super administrator");
+		}
+
 		if (input.role !== undefined) {
-			const target = await userRepository.findById(id);
-			if (!target) {
-				throw new HttpError(404, "User not found");
+			if (target.role === UserRole.SUPER_ADMIN) {
+				throw new HttpError(403, "Cannot change the super administrator's role");
 			}
 			if (target.role === UserRole.ADMIN && target.id !== actorId) {
 				throw new HttpError(403, "Cannot change another administrator's role");
@@ -83,6 +91,11 @@ export class UserService {
 	}
 
 	async deleteAdmin(id: string, actorId: string) {
+		const actor = await userRepository.findById(actorId);
+		if (!actor || actor.role !== UserRole.SUPER_ADMIN) {
+			throw new HttpError(403, "Only super administrators can delete administrators");
+		}
+
 		const target = await userRepository.findById(id);
 		if (!target) {
 			throw new HttpError(404, "User not found");

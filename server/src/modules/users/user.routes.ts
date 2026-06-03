@@ -23,7 +23,7 @@ router.post(
 router.delete(
 	"/admins/:id",
 	authMiddleware,
-	requireRole("ADMIN"),
+	requireRole("SUPER_ADMIN"),
 	(req, res) => controller.deleteAdmin(req, res),
 );
 

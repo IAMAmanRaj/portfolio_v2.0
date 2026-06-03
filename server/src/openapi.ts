@@ -113,7 +113,7 @@
  * @openapi
  * /users/admins/{id}:
  *   delete:
- *     summary: Delete an administrator account (ADMIN only; cannot delete self)
+ *     summary: Delete a regular administrator account (SUPER_ADMIN only)
  *     parameters:
  *       - in: path
  *         name: id
@@ -124,7 +124,7 @@
  *       204:
  *         description: Administrator deleted
  *       400:
- *         description: Cannot delete own account or target is not an admin
+ *         description: Target is not a regular admin
  *       401:
  *         description: Unauthorized
  *       403:
@@ -137,7 +137,7 @@
  * @openapi
  * /users/{id}/role:
  *   patch:
- *     summary: Change a user's role (ADMIN only; cannot change another admin's role)
+ *     summary: Change a user's role (ADMIN only; SUPER_ADMIN cannot be assigned or changed)
  *     parameters:
  *       - in: path
  *         name: id
@@ -202,7 +202,7 @@
  * @openapi
  * /users/{id}:
  *   patch:
- *     summary: Update a user (ADMIN only). Role changes are not allowed for other administrators unless you are that user.
+ *     summary: Update a user (ADMIN only). SUPER_ADMIN cannot be assigned or changed.
  *     parameters:
  *       - in: path
  *         name: id
