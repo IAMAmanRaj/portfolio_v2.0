@@ -9,6 +9,7 @@ import { csrfMiddleware } from "./middlewares/csrf.middleware";
 import { errorMiddleware } from "./middlewares/error.middleware";
 import { authRoutes } from "./modules/auth/auth.routes";
 import { userRoutes } from "./modules/users/user.routes";
+import { postRoutes } from "./modules/posts/post.routes";
 import { Router } from "express";
 
 
@@ -42,6 +43,7 @@ async function startServer() {
 	v1.use("/auth", authRoutes);
 	// CSRF is only enforced here, on the routes that actually mutate state.
 	v1.use("/users", csrfMiddleware, userRoutes);
+	v1.use("/posts", csrfMiddleware, postRoutes);
 	v1.get("/health", (_req, res) => {
 		res.json({ message: "Backend is up & running!" });
 	});
