@@ -17,13 +17,9 @@ export const csrfMiddleware = (
 	res: Response,
 	next: NextFunction,
 ) => {
-	// Exempt auth endpoints that don't need CSRF to function.
-	if (
-		(req.method === "POST" && (req.path === "/auth/login" || req.path === "/auth/logout"))
-	) {
-		return next();
-	}
-
+	// Mounted only on routes that mutate state (currently /users/*).
+	// /auth/* never runs this middleware: login has no session yet to protect,
+	// and logout is intentionally left CSRF-free too (see auth.routes.ts).
 	const cookieToken = req.cookies?.[env.csrfCookieName] as string | undefined;
 
 	// Ensure a token exists for clients to read and send back on mutations.

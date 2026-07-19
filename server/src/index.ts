@@ -29,17 +29,19 @@ async function startServer() {
 	app.use(express.json());
 	app.use(cookieMiddleware);
 	app.use(corsMiddleware);
-	app.use(csrfMiddleware);
 
 	// Swagger UI
 	setupSwagger(app);
 
-	
+
 
 	// Routes
 	const v1 = Router();
+	// Auth routes (login/logout/me) never need CSRF: login has no session yet
+	// to protect, logout is exempted by design, and /me is a read-only GET.
 	v1.use("/auth", authRoutes);
-	v1.use("/users", userRoutes);
+	// CSRF is only enforced here, on the routes that actually mutate state.
+	v1.use("/users", csrfMiddleware, userRoutes);
 	v1.get("/health", (_req, res) => {
 		res.json({ message: "Backend is up & running!" });
 	});
