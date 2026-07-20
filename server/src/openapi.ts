@@ -85,6 +85,8 @@
  * /users/admins:
  *   post:
  *     summary: Create a new administrator (ADMIN only)
+ *     parameters:
+ *       - $ref: '#/components/parameters/CsrfHeader'
  *     requestBody:
  *       required: true
  *       content:
@@ -120,6 +122,7 @@
  *         schema:
  *           type: string
  *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
  *     responses:
  *       204:
  *         description: Administrator deleted
@@ -144,6 +147,7 @@
  *         schema:
  *           type: string
  *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
  *     requestBody:
  *       required: true
  *       content:
@@ -174,6 +178,8 @@
  * /users:
  *   post:
  *     summary: Create a new author (ADMIN only)
+ *     parameters:
+ *       - $ref: '#/components/parameters/CsrfHeader'
  *     requestBody:
  *       required: true
  *       content:
@@ -209,6 +215,7 @@
  *         schema:
  *           type: string
  *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
  *     requestBody:
  *       required: true
  *       content:
@@ -245,6 +252,7 @@
  *         schema:
  *           type: string
  *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
  *     responses:
  *       204:
  *         description: Author deleted
@@ -254,4 +262,196 @@
  *         description: Forbidden. You are not authorized to access this resource.
  *       404:
  *         description: Author not found
+ */
+
+/**
+ * @openapi
+ * /posts:
+ *   get:
+ *     summary: List published posts (public, no auth)
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Paginated list of published posts (summary shape, no content field)
+ *       400:
+ *         description: Invalid query parameters
+ *   post:
+ *     summary: Create a post (any authenticated role; always created as DRAFT)
+ *     parameters:
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               excerpt:
+ *                 type: string
+ *               featuredImage:
+ *                 type: string
+ *               isPinned:
+ *                 type: boolean
+ *               slug:
+ *                 type: string
+ *                 description: Optional. Auto-generated from title and de-duplicated if omitted.
+ *             required:
+ *               - title
+ *               - content
+ *     responses:
+ *       201:
+ *         description: Post created (status DRAFT)
+ *       400:
+ *         description: Invalid payload
+ *       401:
+ *         description: Unauthorized
+ *       409:
+ *         description: Slug already in use
+ */
+
+/**
+ * @openapi
+ * /posts/{slug}:
+ *   get:
+ *     summary: Get a published post by slug (public, no auth)
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Full post detail (includes content)
+ *       404:
+ *         description: Post not found
+ */
+
+/**
+ * @openapi
+ * /posts/manage:
+ *   get:
+ *     summary: List posts of any status (own posts only for AUTHOR; all posts for ADMIN/SUPER_ADMIN)
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [DRAFT, PUBLISHED]
+ *     responses:
+ *       200:
+ *         description: Paginated list of posts, any status, including content
+ *       401:
+ *         description: Unauthorized
+ *       400:
+ *         description: Invalid query parameters
+ */
+
+/**
+ * @openapi
+ * /posts/manage/{id}:
+ *   get:
+ *     summary: Get a single post by id, any status (own post only for AUTHOR)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Full post detail
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Cannot view another author's post
+ *       404:
+ *         description: Post not found
+ *   patch:
+ *     summary: Update, publish, or unpublish a post (own post only for AUTHOR)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               excerpt:
+ *                 type: string
+ *               featuredImage:
+ *                 type: string
+ *               isPinned:
+ *                 type: boolean
+ *               slug:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [DRAFT, PUBLISHED]
+ *                 description: Setting PUBLISHED for the first time stamps publishedAt; later changes leave it untouched.
+ *     responses:
+ *       200:
+ *         description: Post updated
+ *       400:
+ *         description: Invalid payload, or no fields to update
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Cannot update another author's post
+ *       404:
+ *         description: Post not found
+ *       409:
+ *         description: Slug already in use
+ *   delete:
+ *     summary: Delete a post (own post only for AUTHOR)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     responses:
+ *       204:
+ *         description: Post deleted
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Cannot delete another author's post
+ *       404:
+ *         description: Post not found
  */
