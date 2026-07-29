@@ -455,3 +455,168 @@
  *       404:
  *         description: Post not found
  */
+
+/**
+ * @openapi
+ * /categories:
+ *   get:
+ *     summary: List categories (public)
+ *     description: >
+ *       Returns a flat list by default, ordered by sortOrder then name.
+ *       Pass tree=true to get nested nodes with a children array on each.
+ *     parameters:
+ *       - in: query
+ *         name: tree
+ *         schema:
+ *           type: string
+ *           enum: ["true", "false", "1", "0"]
+ *         description: When true, returns nested nodes instead of a flat list.
+ *       - in: query
+ *         name: parentId
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: >
+ *           Flat mode - return only the direct children of this category.
+ *           Tree mode - return the subtree hanging beneath it.
+ *     responses:
+ *       200:
+ *         description: Categories returned
+ *       400:
+ *         description: Invalid query parameters
+ *   post:
+ *     summary: Create a category (ADMIN / SUPER_ADMIN only)
+ *     parameters:
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Must be unique across all categories.
+ *               slug:
+ *                 type: string
+ *                 description: >
+ *                   Optional. Omit it and a unique slug is generated from the name.
+ *                   Supply one and it must be free, or the request fails with 409.
+ *               description:
+ *                 type: string
+ *               parentId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *                 description: Omit or send null to create a top-level category.
+ *               sortOrder:
+ *                 type: integer
+ *             required:
+ *               - name
+ *     responses:
+ *       201:
+ *         description: Category created
+ *       400:
+ *         description: Invalid payload, or parent category not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - requires ADMIN or SUPER_ADMIN
+ *       409:
+ *         description: Category name or slug already in use
+ */
+
+/**
+ * @openapi
+ * /categories/{slug}:
+ *   get:
+ *     summary: Get a single category by slug (public)
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Category returned
+ *       404:
+ *         description: Category not found
+ */
+
+/**
+ * @openapi
+ * /categories/{id}:
+ *   patch:
+ *     summary: Update a category (ADMIN / SUPER_ADMIN only)
+ *     description: >
+ *       Reparenting is validated: a category cannot become its own parent,
+ *       cannot be moved under one of its own descendants, and the target
+ *       parent must exist. Send parentId as null to promote it to a root.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               slug:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               parentId:
+ *                 type: string
+ *                 format: uuid
+ *                 nullable: true
+ *               sortOrder:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Category updated
+ *       400:
+ *         description: >
+ *           Invalid payload, no fields to update, parent not found,
+ *           self-parenting, or a move that would create a cycle
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - requires ADMIN or SUPER_ADMIN
+ *       404:
+ *         description: Category not found
+ *       409:
+ *         description: Category name or slug already in use
+ *   delete:
+ *     summary: Delete a category (ADMIN / SUPER_ADMIN only)
+ *     description: >
+ *       Refused with 409 while the category still has sub-categories - move or
+ *       delete those first. Deleting a category that is only linked to posts is
+ *       allowed: the links are removed, the posts themselves are untouched.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     responses:
+ *       204:
+ *         description: Category deleted
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - requires ADMIN or SUPER_ADMIN
+ *       404:
+ *         description: Category not found
+ *       409:
+ *         description: Category still has sub-categories
+ */

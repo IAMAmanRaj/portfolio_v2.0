@@ -14,7 +14,7 @@ const swaggerDefinition = {
 			"via POST /auth/login below sets the auth cookie in your browser and every " +
 			"subsequent \"Try it out\" call on this page will carry it automatically — " +
 			"no manual token entry needed.\n\n" +
-			"For any mutating request under /users/* or /posts/* (POST/PATCH/DELETE), " +
+			"For any mutating request under /users/*, /posts/* or /categories/* (POST/PATCH/DELETE), " +
 			"you also need to send the x-csrf-token header. Read the value from the " +
 			"csrf_token cookie (set alongside the auth cookie at login) via your browser's " +
 			"dev tools, and paste it into the X-Csrf-Token field on that request.",
