@@ -6,6 +6,12 @@ const slugSchema = z
 	.max(200)
 	.regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens only");
 
+// Replace-set arrays: whatever is sent is exactly what the post ends up
+// linked to. Unknown ids are rejected in the service (400, id named in the
+// message) rather than silently dropped here.
+const categoryIdsSchema = z.array(z.string().uuid("categoryIds must contain valid ids"));
+const tagIdsSchema = z.array(z.string().uuid("tagIds must contain valid ids"));
+
 export const createPostSchema = z.object({
 	title: z.string().min(1).max(200),
 	slug: slugSchema.optional(),
@@ -13,6 +19,8 @@ export const createPostSchema = z.object({
 	excerpt: z.string().max(500).optional(),
 	featuredImage: z.string().url().optional(),
 	isPinned: z.boolean().optional(),
+	categoryIds: categoryIdsSchema.optional(),
+	tagIds: tagIdsSchema.optional(),
 });
 
 export type CreatePostSchema = z.infer<typeof createPostSchema>;
@@ -26,6 +34,9 @@ export const updatePostSchema = z
 		featuredImage: z.string().url().optional(),
 		isPinned: z.boolean().optional(),
 		status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
+		// Send [] to clear all categories/tags; omit the field to leave them alone.
+		categoryIds: categoryIdsSchema.optional(),
+		tagIds: tagIdsSchema.optional(),
 	})
 	.refine((data) => Object.keys(data).length > 0, {
 		message: "No fields to update",

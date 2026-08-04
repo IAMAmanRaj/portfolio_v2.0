@@ -282,7 +282,9 @@
  *           default: 10
  *     responses:
  *       200:
- *         description: Paginated list of published posts (summary shape, no content field)
+ *         description: >
+ *           Paginated list of published posts (summary shape, no content field).
+ *           Each post embeds categories: [{id, name, slug}] and tags: [{id, name, slug}].
  *       400:
  *         description: Invalid query parameters
  *   post:
@@ -309,6 +311,18 @@
  *               slug:
  *                 type: string
  *                 description: Optional. Auto-generated from title and de-duplicated if omitted.
+ *               categoryIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: Optional. Every id must already exist, or the request fails with 400.
+ *               tagIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: Optional. Every id must already exist, or the request fails with 400.
  *             required:
  *               - title
  *               - content
@@ -316,7 +330,7 @@
  *       201:
  *         description: Post created (status DRAFT)
  *       400:
- *         description: Invalid payload
+ *         description: Invalid payload, or an unknown category/tag id
  *       401:
  *         description: Unauthorized
  *       409:
@@ -336,7 +350,9 @@
  *         required: true
  *     responses:
  *       200:
- *         description: Full post detail (includes content)
+ *         description: >
+ *           Full post detail (includes content), with categories: [{id, name, slug}]
+ *           and tags: [{id, name, slug}] embedded.
  *       404:
  *         description: Post not found
  */
@@ -364,7 +380,9 @@
  *           enum: [DRAFT, PUBLISHED]
  *     responses:
  *       200:
- *         description: Paginated list of posts, any status, including content
+ *         description: >
+ *           Paginated list of posts, any status, including content and embedded
+ *           categories/tags.
  *       401:
  *         description: Unauthorized
  *       400:
@@ -384,7 +402,7 @@
  *         required: true
  *     responses:
  *       200:
- *         description: Full post detail
+ *         description: Full post detail, with categories and tags embedded
  *       401:
  *         description: Unauthorized
  *       403:
@@ -423,11 +441,29 @@
  *                 type: string
  *                 enum: [DRAFT, PUBLISHED]
  *                 description: Setting PUBLISHED for the first time stamps publishedAt; later changes leave it untouched.
+ *               categoryIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: >
+ *                   Replaces the post's full category list with exactly this set.
+ *                   Omit the field to leave categories untouched; send [] to clear
+ *                   them all. Every id must already exist, or the request fails with 400.
+ *               tagIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: uuid
+ *                 description: >
+ *                   Replaces the post's full tag list with exactly this set.
+ *                   Omit the field to leave tags untouched; send [] to clear them
+ *                   all. Every id must already exist, or the request fails with 400.
  *     responses:
  *       200:
  *         description: Post updated
  *       400:
- *         description: Invalid payload, or no fields to update
+ *         description: Invalid payload, no fields to update, or an unknown category/tag id
  *       401:
  *         description: Unauthorized
  *       403:

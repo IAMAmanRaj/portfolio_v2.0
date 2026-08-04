@@ -47,6 +47,13 @@ export class PostService {
 	}
 
 	async create(actor: Actor, input: CreatePostInput) {
+		// De-dupe once, up front, so the same array is used for both the
+		// existence check and the write — no chance of them disagreeing.
+		const categoryIds = input.categoryIds ? Array.from(new Set(input.categoryIds)) : undefined;
+		const tagIds = input.tagIds ? Array.from(new Set(input.tagIds)) : undefined;
+		await this.assertCategoryIdsExist(categoryIds);
+		await this.assertTagIdsExist(tagIds);
+
 		const baseSlug = input.slug ? input.slug : slugify(input.title);
 
 		if (input.slug) {
@@ -59,11 +66,19 @@ export class PostService {
 
 		const slug = input.slug ? baseSlug : await this.dedupeSlug(baseSlug);
 
-		return postRepository.create({
-			...input,
-			authorId: actor.id,
-			slug,
-		});
+		return postRepository.create(
+			{
+				authorId: actor.id,
+				slug,
+				title: input.title,
+				content: input.content,
+				excerpt: input.excerpt,
+				featuredImage: input.featuredImage,
+				isPinned: input.isPinned,
+			},
+			categoryIds ?? [],
+			tagIds ?? [],
+		);
 	}
 
 	async update(actor: Actor, id: string, input: UpdatePostInput) {
@@ -82,7 +97,17 @@ export class PostService {
 			}
 		}
 
-		const patch: UpdatePostInput & { publishedAt?: Date } = { ...input };
+		// undefined stays undefined ("leave links alone"); a present array
+		// (including []) is de-duped and validated before anything is written.
+		const categoryIds = input.categoryIds ? Array.from(new Set(input.categoryIds)) : input.categoryIds;
+		const tagIds = input.tagIds ? Array.from(new Set(input.tagIds)) : input.tagIds;
+		await this.assertCategoryIdsExist(categoryIds);
+		await this.assertTagIdsExist(tagIds);
+
+		const { categoryIds: _categoryIds, tagIds: _tagIds, ...fields } = input;
+		const patch: Omit<UpdatePostInput, "categoryIds" | "tagIds"> & { publishedAt?: Date } = {
+			...fields,
+		};
 
 		// First transition into PUBLISHED stamps publishedAt. Later transitions
 		// (including back to DRAFT) leave the original publishedAt untouched.
@@ -90,7 +115,7 @@ export class PostService {
 			patch.publishedAt = new Date();
 		}
 
-		return postRepository.updateById(id, patch);
+		return postRepository.updateById(id, patch, categoryIds, tagIds);
 	}
 
 	async remove(actor: Actor, id: string) {
@@ -102,6 +127,25 @@ export class PostService {
 			throw new HttpError(403, "Cannot delete another author's post");
 		}
 		await postRepository.deleteById(id);
+	}
+
+	// Rejects the whole request (400, naming the bad id) rather than silently
+	// dropping an unknown category/tag id — a typo shouldn't make content
+	// vanish from a post with no signal anything went wrong.
+	private async assertCategoryIdsExist(ids: string[] | undefined) {
+		if (!ids || ids.length === 0) return;
+		const missing = await postRepository.findMissingCategoryIds(ids);
+		if (missing.length > 0) {
+			throw new HttpError(400, `Unknown category id(s): ${missing.join(", ")}`);
+		}
+	}
+
+	private async assertTagIdsExist(ids: string[] | undefined) {
+		if (!ids || ids.length === 0) return;
+		const missing = await postRepository.findMissingTagIds(ids);
+		if (missing.length > 0) {
+			throw new HttpError(400, `Unknown tag id(s): ${missing.join(", ")}`);
+		}
 	}
 
 	private async dedupeSlug(baseSlug: string): Promise<string> {
