@@ -620,3 +620,124 @@
  *       409:
  *         description: Category still has sub-categories
  */
+
+/**
+ * @openapi
+ * /tags:
+ *   get:
+ *     summary: List tags (public)
+ *     description: >
+ *       Returns every tag, ordered by name, each with a postCount - the number
+ *       of posts currently using it. Tags are a small flat set, so this is not
+ *       paginated; sort by postCount client-side for a tag cloud.
+ *     responses:
+ *       200:
+ *         description: Tags returned
+ *   post:
+ *     summary: Create a tag (any authenticated role)
+ *     description: >
+ *       Deliberately looser than categories - AUTHOR can create tags, since
+ *       tags are content-level labels applied while writing.
+ *     parameters:
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Must be unique across all tags.
+ *               slug:
+ *                 type: string
+ *                 description: >
+ *                   Optional. Omit it and a unique slug is generated from the name.
+ *                   Supply one and it must be free, or the request fails with 409.
+ *             required:
+ *               - name
+ *     responses:
+ *       201:
+ *         description: Tag created
+ *       400:
+ *         description: Invalid payload
+ *       401:
+ *         description: Unauthorized
+ *       409:
+ *         description: Tag name or slug already in use
+ */
+
+/**
+ * @openapi
+ * /tags/{slug}:
+ *   get:
+ *     summary: Get a single tag by slug (public)
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Tag returned, including its postCount
+ *       404:
+ *         description: Tag not found
+ */
+
+/**
+ * @openapi
+ * /tags/{id}:
+ *   patch:
+ *     summary: Rename a tag or change its slug (any authenticated role)
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               slug:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tag updated
+ *       400:
+ *         description: Invalid payload, or no fields to update
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Tag not found
+ *       409:
+ *         description: Tag name or slug already in use
+ *   delete:
+ *     summary: Delete a tag (any authenticated role)
+ *     description: >
+ *       Allowed even when posts are using the tag - unlike categories there is
+ *       no subtree to lose. The post_tags links are removed and the posts
+ *       themselves are untouched. Check postCount first if that matters.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     responses:
+ *       204:
+ *         description: Tag deleted
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Tag not found
+ */

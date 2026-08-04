@@ -11,6 +11,7 @@ import { authRoutes } from "./modules/auth/auth.routes";
 import { userRoutes } from "./modules/users/user.routes";
 import { postRoutes } from "./modules/posts/post.routes";
 import { categoryRoutes } from "./modules/categories/category.routes";
+import { tagRoutes } from "./modules/tags/tag.routes";
 import { Router } from "express";
 
 
@@ -46,6 +47,7 @@ async function startServer() {
 	v1.use("/users", csrfMiddleware, userRoutes);
 	v1.use("/posts", csrfMiddleware, postRoutes);
 	v1.use("/categories", csrfMiddleware, categoryRoutes);
+	v1.use("/tags", csrfMiddleware, tagRoutes);
 	v1.get("/health", (_req, res) => {
 		res.json({ message: "Backend is up & running!" });
 	});
