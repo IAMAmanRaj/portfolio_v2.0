@@ -16,8 +16,5 @@ build/
 # TypeScript
 *.tsbuildinfo
 
-# Prisma
-prisma/migrations/
-/src/generated/prisma
-
+# Prisma (generated client only — migrations are tracked deliberately)
 /src/generated/prisma
