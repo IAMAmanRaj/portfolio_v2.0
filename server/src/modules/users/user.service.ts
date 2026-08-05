@@ -2,7 +2,7 @@ import { Prisma, UserRole } from "../../generated/prisma/client";
 import { HttpError } from "../../utils/httpError";
 import { hashPassword } from "../../utils/password";
 import { UserRepository } from "./user.repository";
-import { CreateUserInput, UpdateUserInput } from "./user.types";
+import { CreateUserInput, UpdateOwnProfileInput, UpdateUserInput } from "./user.types";
 
 const userRepository = new UserRepository();
 
@@ -58,6 +58,20 @@ export class UserService {
 
 		try {
 			return await userRepository.updateAuthor(id, input);
+		} catch (error) {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				error.code === "P2025"
+			) {
+				throw new HttpError(404, "User not found");
+			}
+			throw error;
+		}
+	}
+
+	async updateOwnProfile(userId: string, input: UpdateOwnProfileInput) {
+		try {
+			return await userRepository.updateProfile(userId, input);
 		} catch (error) {
 			if (
 				error instanceof Prisma.PrismaClientKnownRequestError &&

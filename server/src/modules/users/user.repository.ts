@@ -1,6 +1,6 @@
 import { UserRole } from "../../generated/prisma/client";
 import db from "../../lib/db";
-import { CreateUserInput, UpdateUserInput } from "./user.types";
+import { CreateUserInput, UpdateOwnProfileInput, UpdateUserInput } from "./user.types";
 
 export const userPublicSelect = {
 	id: true,
@@ -39,6 +39,14 @@ export class UserRepository {
 	}
 
 	updateAuthor(id: string, data: UpdateUserInput) {
+		return db.user.update({
+			where: { id },
+			data,
+			select: userPublicSelect,
+		});
+	}
+
+	updateProfile(id: string, data: UpdateOwnProfileInput) {
 		return db.user.update({
 			where: { id },
 			data,

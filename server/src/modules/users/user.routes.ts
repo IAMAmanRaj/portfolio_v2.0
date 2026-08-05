@@ -6,6 +6,19 @@ import { UserController } from "./user.controller";
 const router = Router();
 const controller = new UserController();
 
+// Any authenticated role can manage their own profile — this is
+// self-presentation (displayName/bio/avatarUrl), not account administration.
+const anyAuthenticatedRole = requireRole("AUTHOR", "ADMIN", "SUPER_ADMIN");
+
+// Must be registered before "/:id" below, or Express will match "me" as
+// an :id param on the ADMIN-only route instead.
+router.patch(
+	"/me",
+	authMiddleware,
+	anyAuthenticatedRole,
+	(req, res) => controller.updateProfile(req, res),
+);
+
 router.get(
 	"/authors",
 	authMiddleware,

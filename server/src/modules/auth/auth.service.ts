@@ -31,6 +31,8 @@ export class AuthService {
 			email: user.email,
 			displayName: user.displayName,
 			role: user.role,
+			bio: user.bio,
+			avatarUrl: user.avatarUrl,
 		};
 
 		return { user: authUser, token };
@@ -50,6 +52,8 @@ export class AuthService {
 			email: user.email,
 			displayName: user.displayName,
 			role: user.role,
+			bio: user.bio,
+			avatarUrl: user.avatarUrl,
 		};
 	}
 }

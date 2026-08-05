@@ -10,5 +10,7 @@ export interface AuthUser {
 	email: string;
 	displayName: string;
 	role: UserRole;
+	bio: string | null;
+	avatarUrl: string | null;
 }
 

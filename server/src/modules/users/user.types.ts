@@ -12,3 +12,9 @@ export interface UpdateUserInput {
 	role?: UserRole;
 }
 
+export interface UpdateOwnProfileInput {
+	displayName?: string;
+	bio?: string | null;
+	avatarUrl?: string | null;
+}
+

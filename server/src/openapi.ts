@@ -58,10 +58,44 @@
  * @openapi
  * /auth/me:
  *   get:
- *     summary: Get current authenticated user
+ *     summary: Get current authenticated user (includes bio and avatarUrl)
  *     responses:
  *       200:
  *         description: Returns the current user
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @openapi
+ * /users/me:
+ *   patch:
+ *     summary: Update your own profile (any authenticated role — AUTHOR, ADMIN, SUPER_ADMIN)
+ *     description: >
+ *       Self-service only — always acts on the caller's own account, ignoring any id.
+ *       Cannot change email or role; use /users/{id}/role for role changes.
+ *     parameters:
+ *       - $ref: '#/components/parameters/CsrfHeader'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               displayName:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *                 nullable: true
+ *               avatarUrl:
+ *                 type: string
+ *                 nullable: true
+ *     responses:
+ *       200:
+ *         description: Profile updated
+ *       400:
+ *         description: Invalid payload, or no fields supplied
  *       401:
  *         description: Unauthorized
  */
