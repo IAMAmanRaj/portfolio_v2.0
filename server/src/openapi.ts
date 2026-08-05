@@ -102,6 +102,22 @@
 
 /**
  * @openapi
+ * /media/imagekit-auth:
+ *   get:
+ *     summary: Get short-lived ImageKit upload auth params (any authenticated role)
+ *     description: >
+ *       Returns token/expire/signature plus publicKey/urlEndpoint so the client can upload a
+ *       featured image directly to ImageKit without this server touching the file body.
+ *       The private key never leaves the server.
+ *     responses:
+ *       200:
+ *         description: Upload authentication parameters
+ *       401:
+ *         description: Unauthorized
+ */
+
+/**
+ * @openapi
  * /users/authors:
  *   get:
  *     summary: List all author accounts (ADMIN only)

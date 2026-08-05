@@ -19,5 +19,8 @@ export const env = {
 	cookieName: getEnv("AUTH_COOKIE_NAME", "portfolio_auth_token"),
 	csrfCookieName: getEnv("CSRF_COOKIE_NAME", "csrf_token"),
 	isProduction: (process.env.NODE_ENV || "development") === "production",
+	imagekitPublicKey: getEnv("IMAGEKIT_PUBLIC_KEY"),
+	imagekitPrivateKey: getEnv("IMAGEKIT_PRIVATE_KEY"),
+	imagekitUrlEndpoint: getEnv("IMAGEKIT_URL_ENDPOINT"),
 };
 
