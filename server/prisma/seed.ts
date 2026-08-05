@@ -57,79 +57,63 @@ async function main() {
 		role: superAdmin.role,
 	});
 
-	// ── ADMINS ───────────────────────────────────────────────────
-	// const adminPassword = requireEnv("SEED_ADMIN_PASSWORD");
-	// if (adminPassword.length < 6) {
-	// 	throw new Error("SEED_ADMIN_PASSWORD must be at least 6 characters");
-	// }
+	// ── SAMPLE USERS (non-production only) ───────────────────────
+	// Never seed predictable throwaway accounts into production — that would
+	// be handing out known credentials on a live system.
+	if (process.env.NODE_ENV === "production") {
+		console.log("NODE_ENV=production — skipping sample admin/author users.");
+		return;
+	}
 
-	// const adminPasswordHash = await hashPassword(adminPassword);
+	// Falls back through the passwords already in .env so this works without
+	// anyone having to add new variables. That fallback is exactly why these
+	// blocks sat commented out: they required SEED_ADMIN_PASSWORD and
+	// SEED_AUTHOR_PASSWORD to exist, and threw at startup when they didn't.
+	const samplePassword =
+		process.env.SEED_SAMPLE_PASSWORD ||
+		process.env.SEED_ADMIN_PASSWORD ||
+		superAdminPassword;
 
-	// const admins = [
-	// 	{ email: "admin1@example.com", displayName: "Admin One" },
-	// 	{ email: "admin2@example.com", displayName: "Admin Two" },
-	// ] as const;
+	if (samplePassword.length < 6) {
+		throw new Error("Sample user password must be at least 6 characters");
+	}
 
-	// for (const { email, displayName } of admins) {
-	// 	const normalizedEmail = email.trim().toLowerCase();
-	// 	const seeded = await prisma.user.upsert({
-	// 		where: { email: normalizedEmail },
-	// 		update: {
-	// 			passwordHash: adminPasswordHash,
-	// 			displayName,
-	// 			role: UserRole.ADMIN,
-	// 		},
-	// 		create: {
-	// 			email: normalizedEmail,
-	// 			passwordHash: adminPasswordHash,
-	// 			displayName,
-	// 			role: UserRole.ADMIN,
-	// 		},
-	// 	});
-	// 	console.log("Seeded admin:", {
-	// 		id: seeded.id,
-	// 		email: seeded.email,
-	// 		displayName: seeded.displayName,
-	// 		role: seeded.role,
-	// 	});
-	// }
+	const samplePasswordHash = await hashPassword(samplePassword);
 
-	// ── AUTHORS ──────────────────────────────────────────────────
-	// const authorPassword = requireEnv("SEED_AUTHOR_PASSWORD");
-	// if (authorPassword.length < 6) {
-	// 	throw new Error("SEED_AUTHOR_PASSWORD must be at least 6 characters");
-	// }
+	// Two authors, not one, deliberately: the AUTHOR role is scoped to its own
+	// posts, and you cannot test "author A cannot touch author B's post" with
+	// a single author account.
+	const sampleUsers = [
+		{
+			email: (process.env.SEED_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase(),
+			displayName: "Sample Admin",
+			role: UserRole.ADMIN,
+		},
+		{ email: "author1@example.com", displayName: "Author One", role: UserRole.AUTHOR },
+		{ email: "author2@example.com", displayName: "Author Two", role: UserRole.AUTHOR },
+	] as const;
 
-	// const authorPasswordHash = await hashPassword(authorPassword);
+	for (const { email, displayName, role } of sampleUsers) {
+		// Guard against SEED_ADMIN_EMAIL accidentally matching the super admin —
+		// upserting it would silently demote the one account that can't be
+		// recreated through the API.
+		if (email === superAdminEmail) {
+			console.log(`Skipped ${email} — same address as the super admin.`);
+			continue;
+		}
 
-	// const authors = [
-	// 	{ email: "author1@example.com", displayName: "Author One" },
-	// 	{ email: "author2@example.com", displayName: "Author Two" },
-	// ] as const;
+		const seeded = await prisma.user.upsert({
+			where: { email },
+			update: { passwordHash: samplePasswordHash, displayName, role },
+			create: { email, passwordHash: samplePasswordHash, displayName, role },
+		});
 
-	// for (const { email, displayName } of authors) {
-	// 	const normalizedEmail = email.trim().toLowerCase();
-	// 	const seeded = await prisma.user.upsert({
-	// 		where: { email: normalizedEmail },
-	// 		update: {
-	// 			passwordHash: authorPasswordHash,
-	// 			displayName,
-	// 			role: UserRole.AUTHOR,
-	// 		},
-	// 		create: {
-	// 			email: normalizedEmail,
-	// 			passwordHash: authorPasswordHash,
-	// 			displayName,
-	// 			role: UserRole.AUTHOR,
-	// 		},
-	// 	});
-	// 	console.log("Seeded author:", {
-	// 		id: seeded.id,
-	// 		email: seeded.email,
-	// 		displayName: seeded.displayName,
-	// 		role: seeded.role,
-	// 	});
-	// }
+		console.log("Seeded sample user:", {
+			email: seeded.email,
+			displayName: seeded.displayName,
+			role: seeded.role,
+		});
+	}
 }
 
 main()
