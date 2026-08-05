@@ -1,0 +1,9 @@
+# Local working files — not part of the shipped repo
+docs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
