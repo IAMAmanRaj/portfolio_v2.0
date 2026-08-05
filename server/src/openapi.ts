@@ -7,7 +7,7 @@
 
 /**
  * @openapi
- * /:
+ * /health:
  *   get:
  *     summary: Health check
  *     responses:
