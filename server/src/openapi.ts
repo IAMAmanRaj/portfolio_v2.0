@@ -280,6 +280,23 @@
  *         schema:
  *           type: integer
  *           default: 10
+ *       - in: query
+ *         name: category
+ *         schema:
+ *           type: string
+ *         description: Category slug (not id). Only posts filed under this category are returned.
+ *       - in: query
+ *         name: tag
+ *         schema:
+ *           type: string
+ *         description: Tag slug (not id). Only posts carrying this tag are returned.
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: >
+ *           Case-insensitive search over title and excerpt (not content).
+ *           category, tag, and q are combined with AND when more than one is given.
  *     responses:
  *       200:
  *         description: >

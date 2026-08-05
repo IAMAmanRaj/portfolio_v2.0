@@ -33,6 +33,14 @@ export interface PostListQuery {
 	status?: PostStatus;
 }
 
+// Public list filters — category/tag are slugs, combined with AND. Absent
+// keys mean "don't filter on this"; there is no distinct "match nothing" state.
+export interface PostPublicFilters {
+	category?: string;
+	tag?: string;
+	q?: string;
+}
+
 // Embedded shape for a post's categories/tags in API responses — deliberately
 // smaller than the full Category/Tag record, just enough to render a label
 // and link without a second request.

@@ -1,6 +1,6 @@
 import { Prisma, PostStatus } from "../../generated/prisma/client";
 import db from "../../lib/db";
-import { TaxonomyRef, UpdatePostInput } from "./post.types";
+import { PostPublicFilters, TaxonomyRef, UpdatePostInput } from "./post.types";
 
 const authorSummarySelect = {
 	id: true,
@@ -74,8 +74,25 @@ interface CreatePostData {
 const dedupe = (ids: string[]): string[] => Array.from(new Set(ids));
 
 export class PostRepository {
-	async findManyPublished(page: number, limit: number) {
-		const where: Prisma.PostWhereInput = { status: PostStatus.PUBLISHED };
+	async findManyPublished(page: number, limit: number, filters: PostPublicFilters = {}) {
+		const where: Prisma.PostWhereInput = {
+			status: PostStatus.PUBLISHED,
+			// Each present filter narrows the result further (AND), not broader.
+			...(filters.category
+				? { postCategories: { some: { category: { slug: filters.category } } } }
+				: {}),
+			...(filters.tag ? { postTags: { some: { tag: { slug: filters.tag } } } } : {}),
+			// title/excerpt only — content is excluded to keep this cheap and
+			// because the list shape never returns content anyway.
+			...(filters.q
+				? {
+						OR: [
+							{ title: { contains: filters.q, mode: "insensitive" } },
+							{ excerpt: { contains: filters.q, mode: "insensitive" } },
+						],
+					}
+				: {}),
+		};
 
 		const [posts, total] = await Promise.all([
 			db.post.findMany({

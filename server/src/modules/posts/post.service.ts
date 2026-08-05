@@ -2,7 +2,7 @@ import { PostStatus } from "../../generated/prisma/client";
 import { HttpError } from "../../utils/httpError";
 import { slugify } from "../../utils/slugify";
 import { PostRepository } from "./post.repository";
-import { CreatePostInput, UpdatePostInput } from "./post.types";
+import { CreatePostInput, PostPublicFilters, UpdatePostInput } from "./post.types";
 
 type Role = "SUPER_ADMIN" | "ADMIN" | "AUTHOR";
 
@@ -16,8 +16,8 @@ const postRepository = new PostRepository();
 const canManageAny = (role: Role): boolean => role === "ADMIN" || role === "SUPER_ADMIN";
 
 export class PostService {
-	async listPublished(page: number, limit: number) {
-		const { posts, total } = await postRepository.findManyPublished(page, limit);
+	async listPublished(page: number, limit: number, filters: PostPublicFilters = {}) {
+		const { posts, total } = await postRepository.findManyPublished(page, limit, filters);
 		return { posts, page, limit, total };
 	}
 

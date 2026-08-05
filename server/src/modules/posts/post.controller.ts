@@ -30,8 +30,8 @@ export class PostController {
 			return res.status(400).json({ message: "Invalid query parameters" });
 		}
 
-		const { page, limit } = parseResult.data;
-		const result = await postService.listPublished(page, limit);
+		const { page, limit, category, tag, q } = parseResult.data;
+		const result = await postService.listPublished(page, limit, { category, tag, q });
 		return res.status(200).json(result);
 	}
 

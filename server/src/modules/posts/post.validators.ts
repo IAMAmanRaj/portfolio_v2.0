@@ -49,7 +49,17 @@ const paginationSchema = z.object({
 	limit: z.coerce.number().int().min(1).max(50).default(10),
 });
 
-export const postListQuerySchema = paginationSchema;
+// Filters for the public list. category/tag are slugs (the public identifier,
+// same as /categories/:slug and /tags/:slug) rather than ids. All three are
+// combined with AND when more than one is present — each narrows the result
+// further rather than broadening it.
+const postFilterSchema = z.object({
+	category: z.string().min(1).max(200).optional(),
+	tag: z.string().min(1).max(200).optional(),
+	q: z.string().min(1).max(200).optional(),
+});
+
+export const postListQuerySchema = paginationSchema.merge(postFilterSchema);
 
 export const postManageQuerySchema = paginationSchema.extend({
 	status: z.enum(["DRAFT", "PUBLISHED"]).optional(),
