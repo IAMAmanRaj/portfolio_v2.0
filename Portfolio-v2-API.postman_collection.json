@@ -1,240 +1,1389 @@
 {
   "info": {
-    "name": "Portfolio v2.0 — Backend API",
-    "description": "Import into Requestly's API Client. Cookie-based JWT auth: enable cookie persistence, and copy the csrf_token cookie into the {{csrfToken}} variable after login for any mutating request.",
+    "name": "Portfolio v2.0 API",
+    "description": "Full backend API. Suggested order: run folders top to bottom (0 through 6). Requests are numbered within each folder in the order they make sense to run.\n\nBEFORE YOU START\n1. npm run seed in server/ - creates SUPER_ADMIN + sample ADMIN + 2 AUTHORs.\n2. npm run dev in server/ - starts the API on http://localhost:5000.\n3. Open the collection variables and fill in the real email/password values - they're placeholders below, not committed anywhere.\n\nCOOKIES AND CSRF\nAuth is two cookies, not a bearer token: auth_token (httpOnly) and csrf_token (readable). Your client must send cookies automatically (default in Postman/Requestly for same-domain requests) AND echo csrf_token back as the x-csrf-token header on every POST/PATCH/DELETE. Every Login request here has a test script that reads the csrf_token cookie and stores it in {{csrfToken}}, which the header on mutating requests references automatically. If your client doesn't run test scripts, copy the csrf_token cookie value into the csrfToken variable by hand.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
-    { "key": "csrfToken", "value": "" },
-    { "key": "userId", "value": "" },
-    { "key": "postId", "value": "" },
-    { "key": "postSlug", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "csrfToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "superAdminEmail",
+      "value": "REPLACE_WITH_SEED_SUPER_ADMIN_EMAIL",
+      "type": "string"
+    },
+    {
+      "key": "superAdminPassword",
+      "value": "REPLACE_WITH_SEED_SUPER_ADMIN_PASSWORD",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@example.com",
+      "type": "string"
+    },
+    {
+      "key": "author1Email",
+      "value": "author1@example.com",
+      "type": "string"
+    },
+    {
+      "key": "author2Email",
+      "value": "author2@example.com",
+      "type": "string"
+    },
+    {
+      "key": "samplePassword",
+      "value": "REPLACE_WITH_SEED_SAMPLE_PASSWORD",
+      "type": "string"
+    },
+    {
+      "key": "categoryId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoryChildId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categorySlug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tagId1",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tagId2",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tagSlug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "postId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "postSlug",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "targetUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "targetAdminId",
+      "value": "",
+      "type": "string"
+    }
   ],
   "item": [
     {
-      "name": "Auth",
+      "name": "0 - Health",
       "item": [
         {
-          "name": "Login",
-          "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"yourpassword\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
-          }
-        },
-        {
-          "name": "Me",
+          "name": "Health Check",
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "No auth. First thing to hit - confirms the server is up before anything else. If this fails, nothing else will work - check the server is running with `npm run dev` in server/."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "1 - Auth",
+      "item": [
+        {
+          "name": "Login - Super Admin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as the seeded SUPER_ADMIN. Can do everything, including things ADMIN cannot.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{superAdminEmail}}\",\n  \"password\": \"{{superAdminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const csrf = pm.cookies.get('csrf_token');",
+                  "if (csrf) { pm.collectionVariables.set('csrfToken', csrf); console.log('csrfToken captured:', csrf); }",
+                  "else { console.warn('No csrf_token cookie found - set csrfToken manually if your client does not auto-manage cookies.'); }",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get My Session (auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Returns id, email, displayName, role, bio, avatarUrl for whoever's auth_token cookie is currently set. Run it after any login to confirm the cookie took."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - Sample Admin",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as the seeded ADMIN (not SUPER_ADMIN). One tier down - can manage categories, authors, and other admins, but not delete admins or touch the super admin.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{samplePassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const csrf = pm.cookies.get('csrf_token');",
+                  "if (csrf) { pm.collectionVariables.set('csrfToken', csrf); console.log('csrfToken captured:', csrf); }",
+                  "else { console.warn('No csrf_token cookie found - set csrfToken manually if your client does not auto-manage cookies.'); }",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - Author One",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as author1@example.com. AUTHOR role - can only manage their OWN posts. One half of the pair used to prove authors can't touch each other's content.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{author1Email}}\",\n  \"password\": \"{{samplePassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const csrf = pm.cookies.get('csrf_token');",
+                  "if (csrf) { pm.collectionVariables.set('csrfToken', csrf); console.log('csrfToken captured:', csrf); }",
+                  "else { console.warn('No csrf_token cookie found - set csrfToken manually if your client does not auto-manage cookies.'); }",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login - Author Two",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as author2@example.com - the other half of the AUTHOR pair. Use this to attempt editing Author One's post later and confirm a 403.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{author2Email}}\",\n  \"password\": \"{{samplePassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const csrf = pm.cookies.get('csrf_token');",
+                  "if (csrf) { pm.collectionVariables.set('csrfToken', csrf); console.log('csrfToken captured:', csrf); }",
+                  "else { console.warn('No csrf_token cookie found - set csrfToken manually if your client does not auto-manage cookies.'); }",
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Logout",
           "request": {
             "method": "POST",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] }
-          }
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Clears both cookies. No CSRF header needed - logout is deliberately exempt."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "name": "Users",
+      "name": "2 - Users",
       "item": [
         {
-          "name": "List Authors",
+          "name": "Update My Profile (self-service)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "description": "Any authenticated role. Always edits the CALLER's own account - there's no way to pass someone else's id here. Cannot touch email or role, only displayName/bio/avatarUrl.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Author One (edited)\",\n  \"bio\": \"Backend dev, testing my own API.\",\n  \"avatarUrl\": \"https://example.com/avatar.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Authors (ADMIN)",
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/users/authors", "host": ["{{baseUrl}}"], "path": ["users", "authors"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/users/authors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "authors"
+              ]
+            },
+            "description": "ADMIN or SUPER_ADMIN only. Lists every AUTHOR account. Log in as Sample Admin first - if logged in as an AUTHOR, expect 403."
+          },
+          "response": []
         },
         {
-          "name": "Create Author",
+          "name": "Create Author (ADMIN)",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "ADMIN only. Creates a new AUTHOR account outside the seed script.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"newauthor@example.com\",\n  \"password\": \"atleast6chars\",\n  \"displayName\": \"New Author\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
-          }
+              "raw": "{\n  \"email\": \"newauthor@example.com\",\n  \"password\": \"password123\",\n  \"displayName\": \"New Author\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         },
         {
-          "name": "Create Admin",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"newadmin@example.com\",\n  \"password\": \"atleast6chars\",\n  \"displayName\": \"New Admin\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/users/admins", "host": ["{{baseUrl}}"], "path": ["users", "admins"] }
-          }
-        },
-        {
-          "name": "Update User (displayName/role)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"displayName\": \"Updated Name\",\n  \"role\": \"ADMIN\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
-          }
-        },
-        {
-          "name": "Change Role",
+          "name": "Change User Role (ADMIN)",
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{targetUserId}}",
+                "role"
+              ]
+            },
+            "description": "ADMIN only. Set {{targetUserId}} to a real user id first (e.g. from 'List Authors'). SUPER_ADMIN can never be assigned or changed via this route.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"role\": \"ADMIN\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/users/{{userId}}/role", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}", "role"] }
-          }
+              "raw": "{\n  \"role\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         },
         {
-          "name": "Delete Author",
+          "name": "Update User (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{targetUserId}}"
+              ]
+            },
+            "description": "ADMIN only. Edits displayName/role for another user by id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Renamed by Admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Author (ADMIN)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-csrf-token", "value": "{{csrfToken}}" }],
-            "url": { "raw": "{{baseUrl}}/users/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "{{userId}}"] }
-          }
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{targetUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{targetUserId}}"
+              ]
+            },
+            "description": "ADMIN only. Deletes an AUTHOR account. Cannot delete your own account, and cannot target an ADMIN or SUPER_ADMIN through this route."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Admin (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/admins",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "admins"
+              ]
+            },
+            "description": "ADMIN only. Creates another ADMIN account.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newadmin@example.com\",\n  \"password\": \"password123\",\n  \"displayName\": \"New Admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         },
         {
           "name": "Delete Admin (SUPER_ADMIN only)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-csrf-token", "value": "{{csrfToken}}" }],
-            "url": { "raw": "{{baseUrl}}/users/admins/{{userId}}", "host": ["{{baseUrl}}"], "path": ["users", "admins", "{{userId}}"] }
-          }
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/admins/{{targetAdminId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "admins",
+                "{{targetAdminId}}"
+              ]
+            },
+            "description": "SUPER_ADMIN only - stricter than the other admin routes. Log in as Super Admin first, or expect 403. Cannot delete your own account or the super admin itself."
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Posts",
+      "name": "3 - Categories",
       "item": [
         {
-          "name": "List Published (public)",
+          "name": "List Categories (flat)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "description": "Public, no auth. Flat list ordered by sortOrder then name - what an admin dropdown would use."
+          },
+          "response": []
+        },
+        {
+          "name": "List Categories (tree)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories?tree=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ],
+              "query": [
+                {
+                  "key": "tree",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Public. Same data, nested into parent/children - what a public nav menu would use."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Category by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categorySlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categorySlug}}"
+              ]
+            },
+            "description": "Public. {{categorySlug}} gets set automatically after you create one below."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Category - Parent (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "description": "ADMIN/SUPER_ADMIN only - stricter than posts, since categories are site structure. Run this while logged in as Sample Admin. Captures {{categoryId}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Technology\",\n  \"description\": \"Posts about software and tools\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('categoryId', body.category.id);",
+                  "  pm.collectionVariables.set('categorySlug', body.category.slug);",
+                  "  console.log('categoryId captured:', body.category.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Category - Child (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories"
+              ]
+            },
+            "description": "Same role requirement. parentId links this under {{categoryId}} - the self-referencing relation: Category.parentId -> Category.id, one parent, many children. Captures {{categoryChildId}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Web Development\",\n  \"parentId\": \"{{categoryId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('categoryChildId', pm.response.json().category.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Category (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryChildId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryChildId}}"
+              ]
+            },
+            "description": "ADMIN/SUPER_ADMIN only.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Frontend and backend web dev posts\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Parent - expect 409",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "description": "Try this WHILE the child category still exists. Expect 409: the service blocks deleting a category that still has children, rather than cascading."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Child (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryChildId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryChildId}}"
+              ]
+            },
+            "description": "Deletes the child - no children of its own, so this succeeds (204)."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Parent - now succeeds",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categories/{{categoryId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categories",
+                "{{categoryId}}"
+              ]
+            },
+            "description": "Now that the child is gone, this succeeds too (204)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4 - Tags",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tags"
+              ]
+            },
+            "description": "Public. Each tag includes postCount - a Prisma _count on the post_tags relation."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tag by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/tags/{{tagSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tags",
+                "{{tagSlug}}"
+              ]
+            },
+            "description": "Public."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tag 1 (any authenticated role)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tags"
+              ]
+            },
+            "description": "Deliberately looser than categories - ANY logged-in role can create a tag, since tags are content-level labels applied while writing. Try this logged in as Author One. Captures {{tagId1}} / {{tagSlug}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"javascript\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('tagId1', body.tag.id);",
+                  "  pm.collectionVariables.set('tagSlug', body.tag.slug);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create Tag 2 (any authenticated role)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tags"
+              ]
+            },
+            "description": "Captures {{tagId2}} - you'll attach both tags to one post later, which is the many-to-many relation (a post can have many tags, a tag can be on many posts).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"career\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('tagId2', pm.response.json().tag.id);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update Tag (any authenticated role)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tags/{{tagId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tags",
+                "{{tagId1}}"
+              ]
+            },
+            "description": "Note: unlike categories, tag writes aren't role-restricted beyond 'logged in.'",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"javascript-es2024\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tag 2",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/tags/{{tagId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "tags",
+                "{{tagId2}}"
+              ]
+            },
+            "description": "Unguarded, unlike category delete - no subtree to lose. If posts use this tag, the post_tags link rows cascade away; the posts themselves are untouched."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5 - Posts",
+      "item": [
+        {
+          "name": "List Published Posts (public)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/posts?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["posts"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
-            }
-          }
+            },
+            "description": "Public, no auth. Only PUBLISHED posts - DRAFTs never appear here. This is the Post -> User relation: many-to-one, every post has exactly one author."
+          },
+          "response": []
         },
         {
-          "name": "Get by Slug (public)",
+          "name": "List Published Posts - filtered",
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/posts/{{postSlug}}", "host": ["{{baseUrl}}"], "path": ["posts", "{{postSlug}}"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/posts?category={{categorySlug}}&tag={{tagSlug}}&q=test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "{{categorySlug}}"
+                },
+                {
+                  "key": "tag",
+                  "value": "{{tagSlug}}"
+                },
+                {
+                  "key": "q",
+                  "value": "test"
+                }
+              ]
+            },
+            "description": "category/tag filter by SLUG, not id. All three filters combine with AND - try them one at a time too, since combining all three may return nothing."
+          },
+          "response": []
         },
         {
-          "name": "List for Manage (auth)",
+          "name": "Get Published Post by Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{postSlug}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "{{postSlug}}"
+              ]
+            },
+            "description": "Public. Only resolves PUBLISHED posts - a DRAFT's slug 404s here even though 'Get Post for Manage' below can still see it."
+          },
+          "response": []
+        },
+        {
+          "name": "List My Posts (manage)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/posts/manage?page=1&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["posts", "manage"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "manage"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "limit", "value": "10" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
-            }
-          }
+            },
+            "description": "Authenticated. AUTHOR sees only their own posts; ADMIN/SUPER_ADMIN see everyone's. Log in as Author One vs Sample Admin and compare."
+          },
+          "response": []
         },
         {
-          "name": "Get for Manage (auth)",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": { "raw": "{{baseUrl}}/posts/manage/{{postId}}", "host": ["{{baseUrl}}"], "path": ["posts", "manage", "{{postId}}"] }
-          }
-        },
-        {
-          "name": "Create Post",
+          "name": "Create Post (any authenticated role)",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts"
+              ]
+            },
+            "description": "Log in as Author One first. Posts always create as DRAFT - publishing is a separate PATCH. categoryIds/tagIds are optional; every id must already exist or the whole request 400s naming the bad id. Written inside a DB transaction, so the post row and its category/tag links land atomically - this writes the many-to-many join tables (post_categories, post_tags). Captures {{postId}} / {{postSlug}}.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"My First Post\",\n  \"content\": \"Full post body...\",\n  \"excerpt\": \"A short teaser\",\n  \"isPinned\": false\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/posts", "host": ["{{baseUrl}}"], "path": ["posts"] }
-          }
+              "raw": "{\n  \"title\": \"My First Test Post\",\n  \"content\": \"This is the body of a post created while testing the API.\",\n  \"excerpt\": \"A short summary for list views.\",\n  \"categoryIds\": [\n    \"{{categoryId}}\"\n  ],\n  \"tagIds\": [\n    \"{{tagId1}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  pm.collectionVariables.set('postId', body.post.id);",
+                  "  pm.collectionVariables.set('postSlug', body.post.slug);",
+                  "}",
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
         },
         {
-          "name": "Update / Publish Post",
+          "name": "Get Post for Manage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/manage/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "manage",
+                "{{postId}}"
+              ]
+            },
+            "description": "Authenticated. Full detail including DRAFT status."
+          },
+          "response": []
+        },
+        {
+          "name": "Publish Post (author edits own)",
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "x-csrf-token", "value": "{{csrfToken}}" }
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
             ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/manage/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "manage",
+                "{{postId}}"
+              ]
+            },
+            "description": "As Author One (the creator). Sets status to PUBLISHED - publishedAt gets stamped now, on first publish only. Toggling back to DRAFT later won't reset that timestamp.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"PUBLISHED\"\n}"
-            },
-            "url": { "raw": "{{baseUrl}}/posts/manage/{{postId}}", "host": ["{{baseUrl}}"], "path": ["posts", "manage", "{{postId}}"] }
-          }
+              "raw": "{\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         },
         {
-          "name": "Delete Post",
+          "name": "Edit Post as Other Author - expect 403",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/manage/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "manage",
+                "{{postId}}"
+              ]
+            },
+            "description": "Switch to 'Login - Author Two' first, THEN run this. Core RBAC check: AUTHOR can only touch their own posts. Expect 403 'Cannot update another author's post'.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Hijacked title\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Post as Admin - succeeds",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/manage/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "manage",
+                "{{postId}}"
+              ]
+            },
+            "description": "Switch back to Sample Admin. ADMIN/SUPER_ADMIN can edit ANY post - should succeed where Author Two's attempt just failed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isPinned\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Post (author deletes own)",
           "request": {
             "method": "DELETE",
-            "header": [{ "key": "x-csrf-token", "value": "{{csrfToken}}" }],
-            "url": { "raw": "{{baseUrl}}/posts/manage/{{postId}}", "host": ["{{baseUrl}}"], "path": ["posts", "manage", "{{postId}}"] }
-          }
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/posts/manage/{{postId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "posts",
+                "manage",
+                "{{postId}}"
+              ]
+            },
+            "description": "Log back in as Author One to delete their own post, or stay as Admin to delete anyone's."
+          },
+          "response": []
         }
       ]
     },
     {
-      "name": "Misc",
+      "name": "6 - Media",
       "item": [
         {
-          "name": "Health",
+          "name": "Get ImageKit Upload Auth",
           "request": {
             "method": "GET",
             "header": [],
-            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/media/imagekit-auth",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "media",
+                "imagekit-auth"
+              ]
+            },
+            "description": "Any authenticated role. Returns a short-lived token/expire/signature plus publicKey/urlEndpoint - your client would use these to upload a file directly to ImageKit, bypassing this server entirely. The private key never appears here; only the derived signature does."
+          },
+          "response": []
         }
       ]
     }
