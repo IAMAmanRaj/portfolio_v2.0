@@ -50,8 +50,20 @@ async function startServer() {
 	v1.use("/categories", csrfMiddleware, categoryRoutes);
 	v1.use("/tags", csrfMiddleware, tagRoutes);
 	v1.use("/media", csrfMiddleware, mediaRoutes);
-	v1.get("/health", (_req, res) => {
-		res.json({ message: "Backend is up & running!" });
+	// Readiness, not just liveness: db.$connect() only runs once at boot, so a
+	// process that is still up proves nothing about the database being reachable
+	// now. Without this query the endpoint would report 200 while every real
+	// request fails against a paused or unreachable database.
+	v1.get("/health", async (_req, res) => {
+		try {
+			await db.$queryRaw`SELECT 1`;
+			return res.status(200).json({ status: "ok", database: "connected" });
+		} catch (error) {
+			// 503 rather than 500 — this is "temporarily unable to serve", and it's
+			// the status code monitoring tools and load balancers act on.
+			console.error("Health check failed:", error);
+			return res.status(503).json({ status: "degraded", database: "unreachable" });
+		}
 	});
 	app.use("/api/v1", v1);
 

@@ -114,9 +114,23 @@
                 "health"
               ]
             },
-            "description": "No auth. First thing to hit - confirms the server is up before anything else. If this fails, nothing else will work - check the server is running with `npm run dev` in server/."
+            "description": "No auth. First thing to hit - confirms the server is up AND that Postgres is reachable right now (runs SELECT 1). Returns 200 {status: ok, database: connected}, or 503 {status: degraded, database: unreachable} if the database is down. A 503 here means the process is alive but nothing else in this collection will work."
           },
-          "response": []
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Database is connected', () => {",
+                  "  pm.expect(pm.response.json().database).to.eql('connected');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

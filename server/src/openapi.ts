@@ -9,10 +9,37 @@
  * @openapi
  * /health:
  *   get:
- *     summary: Health check
+ *     summary: Health check (readiness — verifies the database, not just the process)
+ *     description: >
+ *       Runs a trivial SELECT 1 against Postgres. Returns 503 rather than 200 if the
+ *       database is unreachable, so a running-but-unusable server is reported as such.
  *     responses:
  *       200:
- *         description: Backend is up and running
+ *         description: Server and database both reachable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ *                 database:
+ *                   type: string
+ *                   example: connected
+ *       503:
+ *         description: Server is running but the database is unreachable
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: degraded
+ *                 database:
+ *                   type: string
+ *                   example: unreachable
  */
 
 /**
