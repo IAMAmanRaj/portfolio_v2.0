@@ -65,20 +65,23 @@ async function main() {
 		return;
 	}
 
-	// Falls back through the passwords already in .env so this works without
-	// anyone having to add new variables. That fallback is exactly why these
-	// blocks sat commented out: they required SEED_ADMIN_PASSWORD and
-	// SEED_AUTHOR_PASSWORD to exist, and threw at startup when they didn't.
-	const samplePassword =
-		process.env.SEED_SAMPLE_PASSWORD ||
-		process.env.SEED_ADMIN_PASSWORD ||
-		superAdminPassword;
+	// No blended/shared "sample password" fallback: admin gets its own
+	// password, authors share one password between the two of them (not a
+	// fallback chain — a deliberate single shared credential, since the two
+	// authors exist to test author-vs-author permission boundaries, not
+	// credential isolation from each other).
+	const adminPassword = requireEnv("SEED_ADMIN_PASSWORD");
+	const authorPassword = requireEnv("SEED_AUTHOR_PASSWORD");
 
-	if (samplePassword.length < 6) {
-		throw new Error("Sample user password must be at least 6 characters");
+	if (adminPassword.length < 6) {
+		throw new Error("SEED_ADMIN_PASSWORD must be at least 6 characters");
+	}
+	if (authorPassword.length < 6) {
+		throw new Error("SEED_AUTHOR_PASSWORD must be at least 6 characters");
 	}
 
-	const samplePasswordHash = await hashPassword(samplePassword);
+	const adminPasswordHash = await hashPassword(adminPassword);
+	const authorPasswordHash = await hashPassword(authorPassword);
 
 	// Two authors, not one, deliberately: the AUTHOR role is scoped to its own
 	// posts, and you cannot test "author A cannot touch author B's post" with
@@ -88,12 +91,23 @@ async function main() {
 			email: (process.env.SEED_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase(),
 			displayName: "Sample Admin",
 			role: UserRole.ADMIN,
+			passwordHash: adminPasswordHash,
 		},
-		{ email: "author1@example.com", displayName: "Author One", role: UserRole.AUTHOR },
-		{ email: "author2@example.com", displayName: "Author Two", role: UserRole.AUTHOR },
+		{
+			email: "author1@example.com",
+			displayName: "Author One",
+			role: UserRole.AUTHOR,
+			passwordHash: authorPasswordHash,
+		},
+		{
+			email: "author2@example.com",
+			displayName: "Author Two",
+			role: UserRole.AUTHOR,
+			passwordHash: authorPasswordHash,
+		},
 	] as const;
 
-	for (const { email, displayName, role } of sampleUsers) {
+	for (const { email, displayName, role, passwordHash } of sampleUsers) {
 		// Guard against SEED_ADMIN_EMAIL accidentally matching the super admin —
 		// upserting it would silently demote the one account that can't be
 		// recreated through the API.
@@ -104,8 +118,8 @@ async function main() {
 
 		const seeded = await prisma.user.upsert({
 			where: { email },
-			update: { passwordHash: samplePasswordHash, displayName, role },
-			create: { email, passwordHash: samplePasswordHash, displayName, role },
+			update: { passwordHash, displayName, role },
+			create: { email, passwordHash, displayName, role },
 		});
 
 		console.log("Seeded sample user:", {

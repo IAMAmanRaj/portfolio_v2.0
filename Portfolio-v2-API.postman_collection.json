@@ -41,8 +41,13 @@
       "type": "string"
     },
     {
-      "key": "samplePassword",
-      "value": "REPLACE_WITH_SEED_SAMPLE_PASSWORD",
+      "key": "adminPassword",
+      "value": "REPLACE_WITH_SEED_ADMIN_PASSWORD",
+      "type": "string"
+    },
+    {
+      "key": "authorPassword",
+      "value": "REPLACE_WITH_SEED_AUTHOR_PASSWORD",
       "type": "string"
     },
     {
@@ -227,7 +232,7 @@
             "description": "Logs in as the seeded ADMIN (not SUPER_ADMIN). One tier down - can manage categories, authors, and other admins, but not delete admins or touch the super admin.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{samplePassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -269,7 +274,7 @@
             "description": "Logs in as author1@example.com. AUTHOR role - can only manage their OWN posts. One half of the pair used to prove authors can't touch each other's content.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{author1Email}}\",\n  \"password\": \"{{samplePassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{author1Email}}\",\n  \"password\": \"{{authorPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -311,7 +316,7 @@
             "description": "Logs in as author2@example.com - the other half of the AUTHOR pair. Use this to attempt editing Author One's post later and confirm a 403.\n\nSets two cookies: auth_token (httpOnly - you can't read it, the browser/client just sends it back automatically) and csrf_token (readable, must be echoed as the x-csrf-token header on every mutating request). The test script below reads the csrf_token cookie and stores it as {{csrfToken}} automatically.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{author2Email}}\",\n  \"password\": \"{{samplePassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{author2Email}}\",\n  \"password\": \"{{authorPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
