@@ -12,15 +12,7 @@
       "Agent",
       "NotebookEdit"
     ],
-    "deny": [
-      "Bash(git commit:*)",
-      "Bash(git commit)",
-      "Bash(git commit --amend:*)",
-      "Bash(git push:*)",
-      "Bash(git push)",
-      "Bash(git push --force:*)",
-      "Bash(git push -f:*)"
-    ],
+    "deny": [],
     "defaultMode": "acceptEdits"
   }
 }
