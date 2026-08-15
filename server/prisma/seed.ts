@@ -89,7 +89,7 @@ async function main() {
 	const sampleUsers = [
 		{
 			email: (process.env.SEED_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase(),
-			displayName: "Sample Admin",
+			displayName: "Admin",
 			role: UserRole.ADMIN,
 			passwordHash: adminPasswordHash,
 		},
