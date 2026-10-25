@@ -28,8 +28,8 @@ export function Portrait({ variant }: { variant: PortraitVariant }) {
     <img
       src={amanCutout}
       alt="Aman Raj"
-      width={1888}
-      height={2256}
+      width={1150}
+      height={1367}
       className={styles.img}
     />
   )
