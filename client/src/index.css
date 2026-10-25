@@ -1,1 +1,130 @@
 @import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 1 — PRIMITIVES
+   Raw values only. Never use these directly in components.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  /* Neutrals (warm) */
+  --sand-50:  #FBFAF6;
+  --sand-300: #c9c1b0;
+  --sand-500: #8a8375;
+  --sand-700: #5c564c;
+  --sand-950: #1c1a16;
+
+  /* Brand + supporting hues */
+  --copper-500: #B8763A;
+  --cobalt-500: #3B5BA5;
+  --pine-500:   #2F7D6B;
+  --brick-500:  #A5493B;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 2 — SEMANTIC TOKENS (the theme contract)
+   Components only ever use these. A new theme = a new block
+   that reassigns this same list. Nothing else changes.
+   ───────────────────────────────────────────────────────────── */
+:root,
+[data-theme="light"] {
+  --bg:            var(--sand-50);
+  --fg:            var(--sand-950);
+  --fg-muted:      var(--sand-500);
+  --fg-subtle:     var(--sand-700);
+  --border:        var(--sand-300);
+  --line:          rgb(28 26 22 / 0.12);
+  --grid-line:     rgb(28 26 22 / 0.07);
+
+  --accent:        var(--copper-500);
+  --accent-fg:     var(--sand-50);
+
+  --inverse-bg:    var(--sand-950);
+  --inverse-fg:    var(--sand-50);
+}
+
+/* Example of a future theme — uncomment when needed.
+[data-theme="dark"] {
+  --bg:         var(--sand-950);
+  --fg:         var(--sand-50);
+  --fg-muted:   var(--sand-300);
+  --fg-subtle:  var(--sand-300);
+  --border:     var(--sand-700);
+  --line:       rgb(251 250 246 / 0.12);
+  --grid-line:  rgb(251 250 246 / 0.07);
+  --accent:     var(--copper-500);
+  --accent-fg:  var(--sand-950);
+  --inverse-bg: var(--sand-50);
+  --inverse-fg: var(--sand-950);
+}
+*/
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 3 — TAILWIND MAPPING
+   `inline` makes utilities read the live CSS var, so switching
+   data-theme re-skins every bg-, text- and border- utility instantly.
+   ───────────────────────────────────────────────────────────── */
+@theme inline {
+  --color-bg:         var(--bg);
+  --color-fg:         var(--fg);
+  --color-fg-muted:   var(--fg-muted);
+  --color-fg-subtle:  var(--fg-subtle);
+  --color-border:     var(--border);
+  --color-line:       var(--line);
+  --color-grid-line:  var(--grid-line);
+  --color-accent:     var(--accent);
+  --color-accent-fg:  var(--accent-fg);
+  --color-inverse-bg: var(--inverse-bg);
+  --color-inverse-fg: var(--inverse-fg);
+}
+
+/* Static tokens (not theme-dependent) */
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, sans-serif;
+  --font-serif:   "Cormorant Garamond", ui-serif, serif;
+  --font-body:    "Work Sans", ui-sans-serif, sans-serif;
+
+  --tracking-tightest: -0.04em;
+  --tracking-tighter:  -0.03em;
+  --tracking-tight:    -0.02em;
+  --tracking-snug:     -0.01em;
+  --tracking-label:    0.1em;
+  --tracking-eyebrow:  0.14em;
+  /* Off-scale values used by the hero, tokenised so components never use arbitrary tracking */
+  --tracking-display:  -0.035em; /* tablet name lockup */
+  --tracking-heading:  -0.025em; /* tablet CTA titles */
+  --tracking-caps:     0.16em;   /* tablet "Frontend Engineer" label */
+
+  /* Breakpoints already match Tailwind defaults: md = 768px, lg = 1024px */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BASE
+   ───────────────────────────────────────────────────────────── */
+@layer base {
+  html { color-scheme: light; }
+  body {
+    @apply bg-bg text-fg font-body antialiased;
+  }
+
+  /* Visible keyboard focus for every interactive element (token-driven) */
+  :focus-visible {
+    @apply outline-2 outline-offset-4 outline-fg;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   UTILITIES — only what Tailwind can't express cleanly
+   ───────────────────────────────────────────────────────────── */
+@utility bg-blueprint {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-position: center;
+  mask-image:
+    radial-gradient(ellipse at center, black 45%, transparent 78%),
+    linear-gradient(to bottom, black 0%, black 45%, transparent 68%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    radial-gradient(ellipse at center, black 45%, transparent 78%),
+    linear-gradient(to bottom, black 0%, black 45%, transparent 68%);
+  -webkit-mask-composite: source-in;
+}
